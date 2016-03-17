@@ -348,16 +348,15 @@ class Tree(object):
 
         return self[pid]
 
-    def ancestors(self, nid):
-	"""Get list of parent,grand-parent,... leading to root"""
-        if not self.contains(nid):
-            raise NodeIDAbsentError("Node '%s' is not in the tree" % nid)
-	
-	alist = []
-	while nid is not None:
-		alist.append(nid)
-		nid = self[nid].bpointer
-	return alist
+    def parents(self, nid):
+	prnts = []
+	node = self.get_node(nid)
+	print str(node.identifier)
+	while not node.is_root():
+		node = self.parent(nid)
+		prnts.append(node)
+		print str(node.identifier)
+	return prnts
 
     def paste(self, nid, new_tree, deepcopy=False):
         """

@@ -353,12 +353,11 @@ class Tree(object):
         if not self.contains(nid):
             raise NodeIDAbsentError("Node '%s' is not in the tree" % nid)
 	
-	plist = []
-	pid = self[nid].bpointer
-	while pid is not None:
-		plist.append(pid)
-		pid = self[pid].bpointer
-	return plist
+	alist = []
+	while nid is not None:
+		alist.append(nid)
+		nid = self[nid].bpointer
+	return alist
 
     def paste(self, nid, new_tree, deepcopy=False):
         """

@@ -22,6 +22,32 @@ from kivy.uix.checkbox import CheckBox
 # Provides Graphical Primitives
 from kivy.graphics import Color, Ellipse, Line
 
+# Provides Tree and EWD Graph classes
+from treelib import Tree
+from treelib import Node
+from pygraph.classes.digraph import digraph
+
+# Provides helper methods in order to make the main code easier to read
+class Helper():
+	@staticmethod
+	def getCommonRoot(t,nid1,nid2):
+	
+		ancestorList1 = t.ancestors(nid1)
+		ancestorList2 = t.ancestors(nid2)
+		
+		for a1 in ancestorList1:
+			for a2 in ancestorList2:
+				if (a1 == a2):
+					return a1
+		
+		return None
+		
+	@staticmethod
+	def getCommonSubTree(t,nid1,nid2):
+	
+		a = Helper.getCommonRoot(t,nid1,nid2)
+		return t.subtree(a)
+				
 class GUICanvas(Widget):
 	pass
 
