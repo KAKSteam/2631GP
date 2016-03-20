@@ -73,9 +73,9 @@ def FDG(G,x,tol):
 			dis = dist(numpy.array([0,0]),numpy.array(f))
 			if dis == 0:
 				dis = 0.1
-			a = numpy.add(x[i],numpy.array([step,step]))
-			nums = a * numpy.divide(f,numpy.array([dis,dis]))
-			print nums
+			a = numpy.array([step,step]) + numpy.array(x[i])
+			nums = numpy.multiply(a,numpy.divide(numpy.array(f),numpy.array([dis,dis])))
+			#print nums
 			x[i] = nums
 			numb = pow(dist(numpy.array([0,0]),numpy.array(f)),2)
 			energy[0] = energy[0] + numb
