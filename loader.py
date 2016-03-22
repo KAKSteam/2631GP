@@ -115,13 +115,4 @@ def load(path):
 
 				#print (tail,head), weight, attributes
 				graph.add_edge((tail,head),weight,attrs=attributes)
-
-	if (gtype == 0):
-		graph.show()
-	if (gtype == 1):
-		for node in graph.nodes():
-			print node, graph.node_attr[node]
-		for edge in graph.edges():
-			print edge, graph.edge_weight(edge),  graph.edge_attr[edge]
-
-load(sys.argv[1])
+	return graph

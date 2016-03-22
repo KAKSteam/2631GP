@@ -1,0 +1,33 @@
+#:kivy  1.8.0
+
+<Node>:
+	size: 20,20
+	canvas:
+		Color:
+			rgb: .4, .8, .8
+		Ellipse:
+			pos: self.pos
+			size: self.size
+
+<Thomas>:
+	size: 50,70
+	canvas:
+		Color:
+			rgb: .8, .1, 0
+		Rectangle:
+			pos: self.pos
+			size: self.size
+
+<TreeVisualizer>:
+	tom: t
+
+    canvas:
+        Color:
+            rgb: 0, .1, .2
+        Rectangle:
+            pos: 0, 0
+            size: self.size
+			
+	Thomas:
+		center: self.parent.center
+		id: t
