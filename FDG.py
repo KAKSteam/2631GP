@@ -4,8 +4,8 @@ import numpy
 import math
 from pygraph.classes.digraph import digraph
 from loader import load
-C = 9
-K = 9
+C = 1
+K = 1
 prog = 0
 step = 9
 energy = 9
@@ -16,15 +16,17 @@ def FDG(G,x,tol):
 	global step
 	global energy
 	global C
-	def updateSteplength(step,e,oe):
+	def updateSteplength(stp,e,oe):
 		if e<oe:
+			global prog
 			prog = prog+1
 			if prog>=5:
 				prog = 0
-				step = step/0.9
+				stp = step/0.9
 		else:
 			prog = 0
-			step = 0.9*step
+			stp = 0.9*stp
+		return stp
 	def fa(i,j):
 		v = dist(numpy.array(x[j]),numpy.array(x[i]))
 		if v == 0:
@@ -32,7 +34,6 @@ def FDG(G,x,tol):
 		return -C*pow(K,2)/v
 	def fr(i,j):
 		return pow(numpy.subtract(j,i),2)/K
-		return pow()
 	def dist(a,b):
 		zipVector = zip(a, b)
 		quar_distance = 0
@@ -73,17 +74,17 @@ def FDG(G,x,tol):
 			dis = dist(numpy.array([0,0]),numpy.array(f))
 			if dis == 0:
 				dis = 0.1
-			a = numpy.array([step,step]) + numpy.array(x[i])
-			nums = numpy.multiply(a,numpy.divide(numpy.array(f),numpy.array([dis,dis])))
+			divi = numpy.divide(f,dis)
+			mult = numpy.multiply(f,divi)
 			#print nums
-			x[i] = nums
+			x[i] = x[i]+mult
 			numb = pow(dist(numpy.array([0,0]),numpy.array(f)),2)
 			energy[0] = energy[0] + numb
 			energy[1] = energy[1] + numb
 			
 		step = updateSteplength(step,energy,oldEnergy)
 		iter = iter + 1
-		if(iter == 10):
+		if(iter == 200):
 			converged = True
 	return x
 
