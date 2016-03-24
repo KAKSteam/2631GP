@@ -27,12 +27,12 @@ def FDG(G,x,tol):
 			prog = 0
 			stp = 0.9*stp
 		return stp
-	def fa(i,j):
+	def fr(i,j):
 		v = dist(numpy.array(x[j]),numpy.array(x[i]))
 		if v == 0:
 			v = 0.01
 		return -C*pow(K,2)/v
-	def fr(i,j):
+	def fa(i,j):
 		return pow(numpy.subtract(j,i),2)/K
 	def dist(a,b):
 		zipVector = zip(a, b)
@@ -86,8 +86,12 @@ def FDG(G,x,tol):
 		iter = iter + 1
 		if(iter == 200):
 			converged = True
-	return x
-
- 
-plot = FDG(load("EWDGraphFinal.txt"),[(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)],9)
-print plot
+	for i in range(0,len(x)):
+		
+		for j in range(0,len(x[i])):
+			print x[i][j]
+			x[i][j] = int(x[i][j]/100)
+			print x[i][j]
+	return G,x
+def sLoad(path):
+	return FDG(load(path),[(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)],9)
