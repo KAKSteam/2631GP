@@ -9,18 +9,24 @@ from kivy.app import App
 #	this provides us drawable and interactable widgets
 from kivy.uix.widget import Widget
 from kivy.uix.button import Button
-from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.floatlayout import FloatLayout
+
+from kivy.core.window import Window
 
 #	this provides us graphical primitives
 from kivy.graphics import Color, Ellipse, Line
 
-# this isn't part of kivy, but allows us access to random numbers
-from random import random
-
-#import load method and treelib
-from loader import load
+#import treelib
 from treelib import Tree
+
+#import operator
 import operator
+
+#import helper methods
+from helper import loadTree, there_is
+
+#import custom Widgets
+from kivy_extentions3 import CircularButton
 
 #This is to make weight[] selection mo9re legible
 left = 0
@@ -31,11 +37,40 @@ defaultEdgeThickness = 2
 defaultColor = (.4, .7, 1)
 daxis = [320,300]
 dscale = 40
-defaultDiam = 20
+defaultRad = 20
 
-def loadTree(path):
+#CLASSES#
+class NodeWidget(Widget):
 	
-	return load(path)
+	#Instance variables
+	pos = [0,0]
+	col = defaultColor
+	label = ""
+	data = []
+	
+	#Initializer
+	def __init__(alt_pos=None,alt_col=None, input_label=None, input_data=None, **kwargs):
+		super(NodeWidget,self).__init__(**kwargs)
+		
+		if there_is(alt_pos): 
+			self.pos = alt_pos
+		if there_is(alt_col): #TODO: check for valid color
+			#TODO: check if tuple
+			#TODO: check if len = 3
+			self.col = alt_col
+		if there_is(input_label):
+			self.label = input_label
+		if there_is(input_data):
+			self.data = input_data
+
+class EdgeWidget(Widget):
+
+	#Instance variables
+	tail_pos = [0,0]
+	head_pos = [0,0]
+	col = defaultColor
+	label = ""
+	data = []
 
 #Object holding relevant data for visualizing the tree
 class treeData():
@@ -88,12 +123,15 @@ class TreeWidget(Widget):
 	treeData = None
 	axis = 0
 	scale = 0
-	nodeImage = []
-	edgeImage = []
+	nodeWidgets = []
+	edgeWidgets = []
+	mytest = None
 	
 	def __init__(self, trd, a=daxis, s=dscale,**kwargs):
 		#inherits the super constructor from its parent class
 		super(TreeWidget,self).__init__(**kwargs)
+		self._keyboard = Window.request_keyboard(self._keyboard_closed, self)
+		self._keyboard.bind(on_key_down=self._on_keyboard_down)
 		
 		#Set axis and scale
 		self.axis = a
@@ -101,7 +139,16 @@ class TreeWidget(Widget):
 		
 		#Build treeData object
 		self.treeData = trd
-	
+
+	def _keyboard_closed(self):
+		self._keyboard.unbind(on_key_down=self._on_keyboard_down)
+		self._keyboard = None
+		
+	def _on_keyboard_down(self, keyboard, keycode, text, modifiers):
+		if keycode[1] == 'w':
+			print "w"
+		return True
+		
 	#This function draws a node in the widget (todo: change Nodes to be of Widget class and add to this widget)
 	def node(self, pos, col=defaultColor):
 		x, y = pos
@@ -109,8 +156,8 @@ class TreeWidget(Widget):
 
 		with self.canvas:
 			Color(*color)
-			d = defaultDiam
-			Ellipse(pos=(x - d / 2, y - d / 2), size=(d, d))
+			r = defaultRad
+			Ellipse(pos=(x - r / 2, y - r / 2), size=(r, r))
 		
 	#This function draws an edge in the widget (todo: change Edges to be of Widget class and add to this widget)
 	def edge(self, pos1, pos2, col = defaultColor, edgeThickness = defaultEdgeThickness):
@@ -120,7 +167,7 @@ class TreeWidget(Widget):
 
 		with self.canvas:
 			Color(*color)
-			d = defaultDiam
+			d = defaultRad
 			Line(points=[x1,y1,x2,y2], width = edgeThickness)
 			
 	def drawTree(self, nid=0, altroot_pos=None):
@@ -152,27 +199,21 @@ class TreeWidget(Widget):
 			if nid != 0: self.edge(root_pos,pos) #only print the edge if it is not a root
 		for cid in t.get_node(nid).fpointer:
 			self.drawTree(cid, pos) #call drawTree on children
-			
-		#TODO: optimize by changing it to check if the node if a lead instead of a root so to skip
-		#more useless processing and make code cleaner.
-
+		
 class MainApp(App):
 	def build(self):
 
-		parent = BoxLayout()
-		
+		#This is the equivalent of the space where you want to draw the tree
+		parent = FloatLayout()
+
+		#This is how you add the tree to the space where you want to draw it
 		tree = loadTree("TGraphFinal.txt")
 		td = treeData(tree)
 		self.tree = TreeWidget(td,size_hint=(1,1))
 		self.tree.drawTree()
-		#pos1 = (100,100)
-		#pos2 = (120,300)
-		
-		#self.tree.node(pos1,defaultColor)
-		#self.tree.node(pos2,defaultColor)
-		#self.tree.edge(pos1,pos2,defaultColor)
-
 		parent.add_widget(self.tree)
+
+		#Returning draw space
 		return parent
 
 	def clearCanvas(self, obj):
@@ -181,3 +222,6 @@ class MainApp(App):
 	
 MainApp().run()
 #tp.drawTree()
+
+#NOTES
+#For info, use bubble

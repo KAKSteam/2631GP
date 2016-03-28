@@ -1,0 +1,133 @@
+#:kivy  1.8.0
+
+<GraphItems>:
+	item_scale:20
+	size_hint: None, None
+	size: self.item_scale, self.item_scale
+	
+<GraphWidget@Scatter>:
+	auto_bring_to_front: False
+	do_translation: False
+	scale_index: 1
+
+<Thomas>:
+	radius: 1
+	size_hint: self.radius, self.radius
+	
+	canvas:
+		Color:
+			rgb: .8, .1, 0
+		Rectangle:
+			pos: self.pos
+			size: self.size
+	CircularButton:
+		id: handle
+		background_normal: 'normal.png'
+		background_down: 'down.png'
+		pos_hint: {'center_x':root.center_x, 'center_y':root.center_y}
+		on_press:
+			print "hey"
+			print "bobo"
+		
+<CircularButton@Button>
+	radius: 1
+	size_hint: None, None
+	size: self.radius, self.radius
+	border: 0,0,0,0
+	
+	color_normal: .4, .7, 1, 1
+	color_active: .6, .9, 1, 1
+	
+	background_color: self.color_normal
+	
+	#background_down_backup: self.background_down
+	background_down: self.background_normal
+	
+	#on_press: self.background_down = self.background_normal
+	on_press:
+		self.background_color = self.color_active
+	on_release:
+		self.background_color = self.color_normal
+		
+<Node>:
+	radius: 1
+	color: .4, .7, 1, 1
+	active_color: .6, .9, 1, 1
+	
+	size_hint: self.radius, self.radius
+	
+	pos_x: 0
+	pos_y: 0
+	
+	pos_hint: {'center_x': self.pos_x, 'center_y': self.pos_y}
+	
+	CircularButton:
+		id: handle
+		radius: 40
+		
+		background_normal: 'node_normal.png'
+		#background_down: 'node_down.png'
+		center_x: root.center_x
+		center_y: root.center_y
+		on_press:
+			print "hey"
+			print "bobo"
+	
+<Edge>:
+	handle_size: 20
+	color: .4, .7, 1, 1
+	active_color: .6, .9, 1, 1
+	
+	tail_x: 0
+	tail_y: 0
+	head_x: 1
+	head_y: 1
+	
+	x_mod: 1
+	y_mod: 1
+	
+	size_hint: self.head_x - self.tail_x, self.head_y - self.tail_y
+	pos_hint: {'x': self.tail_x, 'y': self.tail_y}
+
+	canvas:
+		Color: 
+			rgb: 0,0,0
+		Line:
+			width: 2
+			points: self.x, self.y, self.x + self.width*self.x_mod, self.y + self.height*self.y_mod
+
+	CircularButton:
+		id: handle
+		radius: root.handle_size
+		background_normal: 'edge_normal.png'
+		#background_down: 'edge_down.png'
+		center_x: root.x + root.width*root.x_mod*0.5
+		center_y: root.y + root.height*root.y_mod*0.5
+		on_press:
+			print "edgy"
+	
+<ScreenWidget>:
+	#THIS EXISTS#
+
+<TreeVisualizer>:
+
+    canvas:
+        Color:
+            rgb: 0.6, 0.65, 0.7
+        Rectangle:
+            pos: 0, 0
+            size: self.size
+			
+	GraphWidget:
+		id: graph
+		pos: 0, 0
+		size_hint: None, None
+		size: root.width*self.scale_index, root.height*self.scale_index
+		
+		GraphItems:
+			pos: 33, 110
+			id: graph_items
+			item_scale: 50
+		
+	ScreenWidget:
+		id: screen

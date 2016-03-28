@@ -116,3 +116,5 @@ def load(path):
 				#print (tail,head), weight, attributes
 				graph.add_edge((tail,head),weight,attrs=attributes)
 	return graph
+	
+#Add a thing to give each node of a tree its branch_edge's info list (so with tag/info/pointid/color)
