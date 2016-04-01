@@ -1,5 +1,12 @@
 #:kivy  1.8.0
 
+<PopUp>:
+	size_hint: None, None
+	size: 160, 120
+	pos_hint: {'x_center': .5, 'y': .6}
+	Label:
+		text: "yeah, hi"
+
 <GraphItems>:
 	scale_index:20
 	size_hint: None, None
@@ -8,7 +15,6 @@
 <GraphWidget@Scatter>:
 	auto_bring_to_front: False
 	do_translation: False
-	bounding_box: 0, 0
 
 <CircularButton@Button>
 	radius: 1
@@ -16,19 +22,22 @@
 	size: self.radius, self.radius
 	border: 0,0,0,0
 	
-	color: .4, .7, 1, 1
+	color_normal: .4, .7, 1, 1
+	color_active: .6, .9, 1, 1
 	
-	background_color: self.color
+	background_color: self.color_normal
 	
 	#background_down_backup: self.background_down
 	background_down: self.background_normal
 	
 	#on_press: self.background_down = self.background_normal
+	on_press:
+		self.background_color = self.color_active
 	on_release:
-		self.background_color = self.color
+		self.background_color = self.color_normal
 		
 <Node>:
-	radius: 40	#to be patched (something weird happens if you set it to 1)
+	radius: 1
 	color: .4, .7, 1, 1
 	active_color: .6, .9, 1, 1
 	
@@ -41,13 +50,15 @@
 	
 	CircularButton:
 		id: handle
-		radius: root.radius
+		radius: 40
 		
 		background_normal: 'node_normal.png'
 		#background_down: 'node_down.png'
-		
 		center_x: root.center_x
 		center_y: root.center_y
+		on_press:
+			print "hey"
+			print "bobo"
 	
 <Edge>:
 	handle_size: 20
@@ -87,13 +98,9 @@
 
 <TreeVisualizer>:
 
-	graph_size: 100,100
-	scale_index: 60
-	node_radius: 40
-
     canvas:
         Color:
-            rgb: 1, 0.9999, 0.999
+            rgb: 0.6, 0.65, 0.7
         Rectangle:
             pos: 0, 0
             size: self.size
@@ -101,23 +108,12 @@
 	GraphWidget:
 		id: graph
 		pos: 0, 0
-		size: root.graph_size
-		
-		canvas:
-			Color:
-				rgba: 1, 0.5, 1, 0.2
-			Rectangle:
-				pos: 0, 0
-				size: self.size
+		size: root.size
 		
 		GraphItems:
-			pos: root.pos
-			id: graph_edges
-			scale_index: root.scale_index
-		GraphItems:
-			pos: root.pos
-			id: graph_nodes
-			scale_index: root.scale_index
+			pos: 33, 110
+			id: graph_items
+			scale_index: 50
 		
 	ScreenWidget:
 		id: screen
