@@ -13,3 +13,9 @@
 # Takes in a valid EWD graph or Tree file and loads it into memory.
 # Note: Does not have a way of recognizing invalid file types yet. This
 # remains to be implemented
+#
+# TREE VISUALIZER
+
+- Related files:
+	- MovingButtons10.py - python code (name will be changed soon to something more appropriate)
+	- TreeVis.kv - associated kv file
