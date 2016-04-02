@@ -17,5 +17,27 @@
 # TREE VISUALIZER
 
 - Related files:
-	- MovingButtons10.py - python code (name will be changed soon to something more appropriate)
+	
 	- TreeVis.kv - associated kv file
+
+	- MovingButtons10.py - python code (name will be changed soon to something more appropriate)
+	
+		API: For the implementation of the popup menu, some functions had to be outlined. As these
+		were few, I've opted for instead just adding comments to the parts of the code that will be
+		relevant to this implementation.
+		
+		These comments are in the:
+	
+		'''
+		comment
+		'''
+		
+		format
+		
+		There are 3 relevant sections of the code that have been commented:
+		
+			1) The spot where you can write whatever and it'll happen on a right click
+
+			2) A variable called popup_menu which I've defined so that you can easily attach your popup to it and access it.
+
+			3) A description of the program hierarchy (at the very end of the code)
