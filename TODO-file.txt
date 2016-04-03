@@ -1,0 +1,59 @@
+Fix that the node property is called "radius" when it turns out it's the diameter
+
+clear up 0.33 0.5 modifier in Node and Edge for InfoWidget's position
+^ clear up all 0.33 and 0.5 type modifiers? (or just explain them or something in notation)
+
+rename Node and Edge to NodeWidget and EdgeWidget
+
+re-draw updated architecture
+
+fix that some nodes go over the bubbles
+
+rename node_normal.png to name that fits that this is the constant picture???
+
+Somewhat important:
+
+make the bubble scale by the tag size (only has to do so on init)
+
+bubble hides when scale is very small.
+
+make a general function that decides between getEdge or getNode in control depending on if tuple or int,
+and replace the paragraph of code I recall from somewhere with that one call.
+
+set a increment variable for the incrementation of basic units (so like, when we
+position node at 1,2,3,4 etc.) (like without the scaler) (so atm it's 1)
+go correct it to be clearly defined visual item positioning functions and the
+zoom function at x_correction and y_correction (that right now look like they incrrement
+at just zoom_speed when it should be (increment_val*zoom_speed) where incrment_val
+has been == 1 atm so it hasn't shown.
+
+in the default functions, put on for "expand node" or, "show node info"
+
+IMPORTANT:
+-1) Add popup to nodes and edges and set it to open on double left-click
+0) attach data to node and edge widgets
+0.1) use tags from data to write tag on node and edge widgets
+
+1)figure out why node 0 is acting weird and fix it
+2)InfoWidget:
+	change size hint to fit tag
+3)Implement tree functions
+4)Implement class in control called "hotkey handler" that can be activated or disactivated
+and has on_key_down things for a bunch of key types of has a function that takes in a key
+type and compares it to a thingNO make a hash algorithm for the key and turn it into an
+int index and get it
+example: maps["a","f","d"] do the thing of getting the index of the given key string
+and then get from the same index in the functions menu[a function, f function, d function]
+index option is cleaner
+but hash function is more efficient
+
+STRETCH GOALS:
+Change scaling method for old vers where nodes stayed same size no matter what
+make bubble show depending on scaling
+
+tag: abreviation algorithm (removes vowels and spaces first) and then only capital letters or first letters after a space and numbers, and then first letter and number
+
+changes:
+	control.select(): not takes in an object to directly perform select() and takes its "i" (soon to be renamed "id")
+	Edge: edge ids are tuples, control.select() performs by detecting if it is a tuple or an int
+	Tag: added tag to nodes and edges

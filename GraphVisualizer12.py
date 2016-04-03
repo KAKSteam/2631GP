@@ -14,6 +14,7 @@ from kivy.uix.button import Button
 from kivy.uix.image import Image
 from kivy.uix.popup import Popup
 from kivy.uix.label import Label
+from math import atan, cos, sin
 
 #import treelib
 from treelib import Tree
@@ -27,8 +28,14 @@ defaultEdgeThickness = 2
 daxis = [3,1]
 dscale = 40
 defaultNodeSize = 20
+zoom_speed = 17
+#drag_speed = 1
 
-dragSpeed = 5
+scale_treshold = 45
+
+class TagWidget(FloatLayout):
+	def __init__(self, **kwargs):
+		super(TagWidget, self).__init__(**kwargs)
 
 class CircularButton(Button):
 	
@@ -47,24 +54,41 @@ class Node(FloatLayout):
 
 	selected = False
 	i = None
+	info_box = None
+	tag_widget = None
 
 	def __init__(self, i, color=None, **kwargs):
 		super(Node,self).__init__(**kwargs)
 		self.i = i
 		self.pos_x, self.pos_y = self.pos
+		self.info_box=Popup(title=self.tag, content=Label(text='hello, place'), size_hint=(None,None), size=(400,400))
+		
 		self.ids['handle'].bind(on_release=self.interact)
 		
 		if there_is(color):
 			self.color = color
-			
+	
+	def generate_tag(self):
+		print "NODE TAG", self.tag
+		self.tag_widget = TagWidget(target_x=self.x,target_y=self.y,target_radius=self.radius,tag=self.tag)
+		self.tag_widget = TagWidget(target_x=self.x,target_y=self.y,target_radius=self.radius,tag=self.tag)
+	
+	def show_tag(self):
+		self.parent.add_widget(self.tag_widget)
+	
+	def hide_tag(self):
+		self.parent.remove_widget(self.tag_widget)
+		
 	def interact(self, value):
 		if self.get_ctrl().touch_button == 'left':
+			if self.get_ctrl().double_click:
+				print "expand node "+str(self.i)
+				self.info_box.open()
 			print "select node", self.i
-			self.get_ctrl().select(self.i)
+			self.get_ctrl().select(self)
 		elif self.get_ctrl().touch_button == 'right':
-			if not self.selected:
-				self.selected = True
-			print "display node options"
+			if self.selected:
+				print "display node options"
 			
 	def select(self):
 		if not self.selected:
@@ -80,6 +104,73 @@ class Node(FloatLayout):
 			#self.remove_widget(self.selected_mask)
 			self.ids['handle'].color = self.color
 			
+	def get_ctrl(self):
+		return self.parent.get_ctrl()
+		
+
+class Edge(FloatLayout):
+
+	selected = False
+	i = None
+	info_box = None
+	tag_widget = None
+
+	def __init__(self, i, tail=None, head=None, color=None, **kwargs):
+		super(Edge, self).__init__(**kwargs)
+		
+		if there_is(tail):
+			self.tail_x, self.tail_y = tail
+		if there_is(head):
+			self.head_x, self.head_y = head
+		if there_is(color):
+			self.color = color
+		
+		self.x_mod = zero_patch(self.head_x, self.tail_x)
+		self.y_mod = zero_patch(self.head_y, self.tail_y)
+		self.i = i
+		self.info_box=Popup(title=self.tag, content=Label(text='hello, place'), size_hint=(None,None), size=(400,400))
+		
+		self.ids['handle'].bind(on_release=self.interact)
+	
+	def generate_tag(self):
+		print self.tag
+		print self.i, self.tail_x, self.tail_y, self.head_x, self.head_y
+		handle_x, handle_y = (self.head_x + self.tail_x)*0.5, (self.head_y + self.tail_y)*0.5
+		print handle_x, handle_y
+		self.tag_widget = TagWidget(target_x=handle_x,target_y=handle_y,target_radius=self.handle_size,tag=self.tag)
+		self.tag_widget = TagWidget(target_x=handle_x,target_y=handle_y,target_radius=self.handle_size,tag=self.tag)
+		
+	def show_tag(self):
+		self.parent.add_widget(self.tag_widget)
+	
+	def hide_tag(self):
+		self.parent.remove_widget(self.tag_widget)
+	
+	def interact(self, value):
+		if self.get_ctrl().touch_button == 'left':
+			if self.get_ctrl().double_click:
+				print "expand edge "+str(self.i)
+				self.info_box.open()
+			print "select edge", self.i
+			self.get_ctrl().select(self)
+		elif self.get_ctrl().touch_button == 'right':
+			if self.selected:
+				print "display edge options"
+			
+	def select(self):
+		if not self.selected:
+			self.selected = True
+			print self.i, "selected"
+			#self.add_widget(self.selected_mask)
+			self.ids['handle'].color = brighten(self.color, 0.2)
+		
+	def deselect(self):
+		if self.selected:
+			self.selected = False
+			print self.i, "deselected"
+			#self.remove_widget(self.selected_mask)
+			self.ids['handle'].color = self.color
+		
 	def get_ctrl(self):
 		return self.parent.get_ctrl()
 		
@@ -140,7 +231,7 @@ class treeData():
 						self.offset[cid] = idx - midPoint + 1 - weight[cid][left]
 						weight[nid][right] += self.offset[cid]
 		
-	def drawTree(self, nid=0, altroot_pos=None):
+	def build_items(self, pid=None, nid=0, altroot_pos=None):
 		#Draws a single node and the edge leading up to it (unless is a root), and then
 		#calls it's self on its children.
 	
@@ -173,31 +264,37 @@ class treeData():
 		if pos[1] < self.graph_bottommost: self.graph_bottommost = pos[1]
 		
 		#paint the node and the edge leading up to it
-		self.treeVis.add_node(nid, pos)
-		if nid != 0: self.treeVis.add_edge(root_pos,pos) #only print the edge if it is not a root
+		self.treeVis.add_node(nid, pos, "Node [ "+str(nid)+" ]")
+		
+		'''
+		For the edge id, since this is a tree, each child only has one parent. Thus, we will use the child the
+		edge is leading up to as the edge's index, since we know this will always be a unique value for edges.
+		'''
+		if nid != 0: self.treeVis.add_edge((pid, nid),root_pos,pos, "Edge [ "+str(pid)+" , " +str(nid)+" ]") #only print the edge if it is not a root
+		
 		print self.graph_leftmost, self.graph_rightmost, self.graph_bottommost
 		for cid in t.get_node(nid).fpointer:
-			self.drawTree(cid, pos) #call drawTree on children
+			self.build_items(nid, cid, pos) #call build_items on children
 			
-	def generate_tree(self):
-		self.drawTree()
+	def load_tree(self):
+		self.build_items()
+		self.treeVis.generate_tree()
 		self.graph_width = self.graph_rightmost - self.graph_leftmost
 		self.graph_height = -self.graph_bottommost
 		
 		print self.graph_width
 		print self.graph_height
 		
-		self.treeVis.graph_size = self.graph_width*self.treeVis.scale_index + 2*self.treeVis.node_radius, self.graph_height*self.treeVis.scale_index + 2*self.treeVis.node_radius
-		self.treeVis.pos = -self.graph_leftmost*self.treeVis.scale_index + self.treeVis.node_radius, -self.graph_bottommost*self.treeVis.scale_index + self.treeVis.node_radius
+		self.treeVis.graph_width = self.graph_width
+		self.treeVis.graph_height = self.graph_height
+		self.treeVis.item_pos = -self.graph_leftmost, -self.graph_bottommost
 		self.treeVis.ids['graph'].bounding_box = self.treeVis.graph_size[0], self.treeVis.graph_size[1]
 		print self.treeVis.ids['graph'].bounding_box
-		
-class PopUp(Bubble):
-	pass
 
-class GraphWidget(Scatter):
-	grow_scaler = Matrix().scale(1.1,1.1,1)
-	shrink_scaler = Matrix().scale(0.9,0.9,1)
+class GraphWidget(FloatLayout):
+	
+	global scale_treshold
+	global zoom_speed
 	
 	def __init__(self, scale_index=None, **kwargs):
 		super(GraphWidget,self).__init__(**kwargs)
@@ -206,12 +303,31 @@ class GraphWidget(Scatter):
 			self.scale_index = scale_index
 	
 	def zoom_in(self, focus_pos):
-		self.apply_transform(self.grow_scaler, anchor=focus_pos)
+		focus_x, focus_y = focus_pos
+		x_correction = ((focus_x - self.x)/self.width)*self.x_units*zoom_speed
+		y_correction = ((focus_y - self.y)/self.height)*self.y_units*zoom_speed
+		self.x -= x_correction
+		self.y -= y_correction
+		self.scale_index += zoom_speed
 		print self, self.size
 		
+		print self.scale_index
+		if self.scale_index > scale_treshold and self.parent.tags_hidden:
+			print "SHOW TAGS"
+			self.parent.show_tags()
+		
 	def zoom_out(self, focus_pos):
-		self.apply_transform(self.shrink_scaler, anchor=focus_pos)
+		focus_x, focus_y = focus_pos
+		x_correction = ((focus_x - self.x)/self.width)*self.x_units*zoom_speed
+		y_correction = ((focus_y - self.y)/self.height)*self.y_units*zoom_speed
+		self.x += x_correction
+		self.y += y_correction
+		self.scale_index -= zoom_speed
 		print self, self.size
+		
+		if self.scale_index < scale_treshold and not self.parent.tags_hidden:
+			print "HIDE TAGS"
+			self.parent.hide_tags()
 		
 	def move(self, transform_vector):
 		delta_x, delta_y = transform_vector
@@ -231,29 +347,12 @@ class GraphItems(FloatLayout):
 			
 	def get_ctrl(self):
 		return self.parent.get_ctrl()
-
-class Edge(FloatLayout):
-	def __init__(self, tail=None, head=None, color=None, **kwargs):
-		super(Edge, self).__init__(**kwargs)
-		
-		if there_is(tail):
-			self.tail_x, self.tail_y = tail
-		if there_is(head):
-			self.head_x, self.head_y = head
-		if there_is(color):
-			self.color = color
-		
-		self.x_mod = zero_patch(self.head_x, self.tail_x)
-		self.y_mod = zero_patch(self.head_y, self.tail_y)
-		
-	def get_ctrl(self):
-		return self.parent.get_ctrl()
 		
 class TreeVisualizer(Widget):
 	graph = None
-	graph_edges = None
-	graph_nodes = None
+	graph_items = None
 	screen = None
+	tags_hidden = True
 	
 	node_widgets = []
 	edge_widgets = []
@@ -269,26 +368,49 @@ class TreeVisualizer(Widget):
 		self.edge_widgets=[None]*num_edges
 		
 		self.graph = self.ids['graph']
-		self.graph_edges = self.ids['graph_edges']
-		self.graph_nodes = self.ids['graph_nodes']
+		self.graph_items = self.ids['graph_items']
 		self.screen = self.ids['screen']
 	
-	def add_node(self, i, input_position):
-		new_node = Node(i, pos=input_position, radius=self.node_radius)
+	def add_node(self, i, input_position, input_tag="n-test"):
+		print "ADDING NODE", i
+		new_node = Node(i, tag=input_tag, pos=input_position, radius=self.node_radius)
+		new_node = Node(i, tag=input_tag, pos=input_position, radius=self.node_radius)
 		self.node_widgets[i] = new_node
-		self.graph_nodes.add_widget(new_node)
 	
-	def add_edge(self, input_tail, input_head):			#TODO: update to input using indices (coz at the moment its bassically a huge list of nones with the edges appended to the end)
-		new_edge = Edge(tail=input_tail, head=input_head)
-		self.edge_widgets.append(new_edge)
-		self.graph_edges.add_widget(new_edge)
+	def add_edge(self, i, input_tail, input_head, input_tag="e-test"):
+		new_edge = Edge(i, tag=input_tag, tail=input_tail, head=input_head)
+		new_edge = Edge(i, tag=input_tag, tail=input_tail, head=input_head)
+		self.edge_widgets[i[1]]=new_edge
 		
+	def generate_tree(self):
+		for part in (self.edge_widgets + self.node_widgets):
+			if part != None:
+				self.graph_items.add_widget(part)
+				part.generate_tag()
+		self.show_tags()
+	
+	def show_tags(self):
+		if self.tags_hidden:
+			for part in (self.edge_widgets + self.node_widgets):
+				if part != None:
+					part.show_tag()
+			self.tags_hidden = False
+				
+	def hide_tags(self):
+		if not self.tags_hidden:
+			for part in (self.edge_widgets + self.node_widgets):
+				if part != None:
+					part.hide_tag()
+			self.tags_hidden = True
+				
 	def get_ctrl(self):
 		return self.parent.get_ctrl()
 
 class ScreenWidget(Widget):
 	def on_touch_down(self,touch):
 		self.get_ctrl().touch_button = touch.button
+		self.get_ctrl().double_click = touch.is_double_tap
+		print "DOUBLE CLICK:", self.get_ctrl().double_click
 		if touch.button == 'middle':
 			touch.grab(self)
 		elif touch.button == 'scrollup':
@@ -323,6 +445,7 @@ class ScreenWidget(Widget):
 			popup_menu = self.get_ctrl().get_window().popup_menu
 			
 			popup_menu.open() 
+			
 			'''
 			^ I just did this to make sure the popup_menu worked
 			'''
@@ -333,6 +456,7 @@ class ScreenWidget(Widget):
 
 class Control(Widget):
 	touch_button = ""
+	double_click = False
 	selection_1, selection_2 = None, None
 	
 	graph_tools = []
@@ -370,33 +494,51 @@ class Control(Widget):
 		return True
 	
 	#GRAPH MANAGEMENT
+	
 	def get_graph_node(self,i):
 		print self.parent.visualizer.node_widgets[i], self.parent.visualizer.node_widgets[i].i
 		return self.parent.visualizer.node_widgets[i]
 		
 	def get_graph_edge(self,i):
-		return self.parent.visualizer.edge_widgets[i]
+		print self.parent.visualizer.edge_widgets[i[1]], self.parent.visualizer.edge_widgets[i[1]].i
+		return self.parent.visualizer.edge_widgets[i[1]]
+	
 		
-	def select(self,i):		#yet to implement this for edges
-		if self.selection_1 == None:		#NOTE: clear other selection if would result in selecting an edge and a node???
-			self.get_graph_node(i).select()
-			self.selection_1 = i
+	def select(self,item):
+		if item.i in (self.selection_1, self.selection_2):
+			print item.i, " is already selected"
+			pass
+		elif self.selection_1 == None:
+			item.select()
+			self.selection_1 = item.i
 			print "[slot 1]", self.selection_1, self.selection_2
 		elif self.selection_2 == None:
-			self.get_graph_node(i).select()
-			self.selection_2 = i
+			item.select()
+			self.selection_2 = item.i
 			print "[slot 2]", self.selection_1, self.selection_2
 		else:
 			self.clear_selection()
-			self.get_graph_node(i).select()
-			self.selection_1 = i
+			item.select()
+			self.selection_1 = item.i
 			print "<cycle>", self.selection_1, self.selection_2
 			
 	def clear_selection(self):
 		if there_is(self.selection_1):
-			self.get_graph_node(self.selection_1).deselect()
+			print type(self.selection_1)
+			if type(self.selection_1) is int:
+				print "INTEGER"
+				self.get_graph_node(self.selection_1).deselect()
+			elif type(self.selection_1) is tuple:
+				self.get_graph_edge(self.selection_1).deselect()
+				
 		if there_is(self.selection_2):
-			self.get_graph_node(self.selection_2).deselect()
+			print type(self.selection_2)
+			if type(self.selection_2) is int:
+				print "INTEGER"
+				self.get_graph_node(self.selection_2).deselect()
+			elif type(self.selection_2) is tuple:
+				self.get_graph_edge(self.selection_2).deselect()
+		
 		self.selection_1, self.selection_2 = None, None
 		print "clear selection", self.selection_1, self.selection_2
 		
@@ -443,21 +585,19 @@ class WindowWidget(FloatLayout):
 	def get_ctrl(self):
 		return self.control
 			
-class TreeVisApp(App):
+class GraphVisApp(App):
     def build(self):
 		
 		t = load("BigTGraph.txt")
 		td = treeData(t)
-		td.generate_tree()
-		td.treeVis
-		
 		parent = WindowWidget()
 		parent.take_visualizer(td.treeVis)
+		td.load_tree()
 		
 		return parent
 
 if __name__ == '__main__':
-    TreeVisApp().run()
+    GraphVisApp().run()
 
 	
 '''
@@ -484,8 +624,7 @@ hierarchy:
 					GraphWidget:
 						children
 						--------
-							graph_nodes(GraphItems): #Node layer#
-							graph_edges(GraphItems): #Edge layer#
+							graph_items(GraphItems): #Node layer#
 				
 As aforementioned, from just about any widget, the command "get_ctrl()" is available and returns Control.
 '''

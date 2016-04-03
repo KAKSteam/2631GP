@@ -1,5 +1,10 @@
 #:kivy  1.8.0
 
+<InfoWidget>:
+	tag: "<insert tag>"
+	Label:
+		text: root.tag
+
 <GraphItems>:
 	scale_index:20
 	size_hint: None, None
@@ -28,11 +33,12 @@
 		self.background_color = self.color
 		
 <Node>:
+	tag:"<node_tag>"
 	radius: 40	#to be patched (something weird happens if you set it to 1)
 	color: .4, .7, 1, 1
 	active_color: .6, .9, 1, 1
 	
-	size_hint: self.radius, self.radius
+	size: self.radius, self.radius
 	
 	pos_x: 0
 	pos_y: 0
@@ -47,9 +53,15 @@
 		
 		center_x: root.center_x
 		center_y: root.center_y
-	
+		
+	InfoWidget:
+		size_hint: (1.4, 0.7)
+		pos_hint: {'center_x': 0.5, 'y': 0.85}
+		
+		tag: root.tag
 	
 <Edge>:
+	tag: "<edge_tag>"
 	handle_size: 20
 	color: .4, .7, 1, 1
 	active_color: .6, .9, 1, 1
@@ -80,6 +92,13 @@
 		center_y: root.y + root.height*root.y_mod*0.5
 		on_press:
 			print "edgy"
+		
+		InfoWidget:
+			size: handle.radius*5, + handle.radius
+			center_x: handle.center_x
+			center_y: handle.center_y + handle.radius
+		
+			tag: root.tag
 	
 <ScreenWidget>:
 	#THIS EXISTS#
@@ -101,13 +120,6 @@
 		id: graph
 		pos: 0, 0
 		size: root.graph_size
-		
-		canvas:
-			Color:
-				rgba: 1, 0.5, 1, 0.2
-			Rectangle:
-				pos: 0, 0
-				size: self.size
 		
 		GraphItems:
 			pos: root.pos

@@ -18,7 +18,7 @@ from kivy.uix.label import Label
 #import treelib
 from treelib import Tree
 
-#This is to make weight[] selection more legible
+#This is to make weight[] selection mo9re legible
 left = 0
 right = 1
 

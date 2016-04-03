@@ -12,13 +12,11 @@ from loader import load
 from kivy.uix.bubble import Bubble
 from kivy.uix.button import Button
 from kivy.uix.image import Image
-from kivy.uix.popup import Popup
-from kivy.uix.label import Label
 
 #import treelib
 from treelib import Tree
 
-#This is to make weight[] selection more legible
+#This is to make weight[] selection mo9re legible
 left = 0
 right = 1
 
@@ -195,9 +193,9 @@ class treeData():
 class PopUp(Bubble):
 	pass
 
-class GraphWidget(Scatter):
-	grow_scaler = Matrix().scale(1.1,1.1,1)
-	shrink_scaler = Matrix().scale(0.9,0.9,1)
+class GraphWidget(FloatLayout):
+	#grow_scaler = Matrix().scale(1.1,1.1,1)
+	#shrink_scaler = Matrix().scale(0.9,0.9,1)
 	
 	def __init__(self, scale_index=None, **kwargs):
 		super(GraphWidget,self).__init__(**kwargs)
@@ -206,11 +204,11 @@ class GraphWidget(Scatter):
 			self.scale_index = scale_index
 	
 	def zoom_in(self, focus_pos):
-		self.apply_transform(self.grow_scaler, anchor=focus_pos)
+		#self.apply_transform(self.grow_scaler, anchor=focus_pos)
 		print self, self.size
 		
 	def zoom_out(self, focus_pos):
-		self.apply_transform(self.shrink_scaler, anchor=focus_pos)
+		#self.apply_transform(self.shrink_scaler, anchor=focus_pos)
 		print self, self.size
 		
 	def move(self, transform_vector):
@@ -291,6 +289,7 @@ class ScreenWidget(Widget):
 		self.get_ctrl().touch_button = touch.button
 		if touch.button == 'middle':
 			touch.grab(self)
+			print "MIDDLE"
 		elif touch.button == 'scrollup':
 			self.parent.graph.zoom_in(touch.pos)
 		elif touch.button == 'scrolldown':
@@ -304,29 +303,12 @@ class ScreenWidget(Widget):
 			x, y = touch.pos
 			x0, y0 = touch.ppos
 			transform_vector = (x-x0, y-y0)
+			print transform_vector
 			self.parent.graph.move(transform_vector)
 			
 	def on_touch_up(self, touch):
 		if touch.grab_current is self:
 			touch.ungrab(self)
-			
-		'''
-		THIS IS THE RIGHT-CLICK EVENT
-		'''
-			
-		if touch.button == 'right':
-		
-			'''
-			THIS GETS THE POPUP_MENU: the menu is created in the WindowWidget (see below)
-			'''
-		
-			popup_menu = self.get_ctrl().get_window().popup_menu
-			
-			popup_menu.open() 
-			'''
-			^ I just did this to make sure the popup_menu worked
-			'''
-
 			
 	def get_ctrl(self):
 		return self.parent.get_ctrl()
@@ -400,39 +382,13 @@ class Control(Widget):
 		self.selection_1, self.selection_2 = None, None
 		print "clear selection", self.selection_1, self.selection_2
 		
-	def get_visualizer(self):
-		return self.parent.visualizer
-		
-	def get_window(self):
-		return self.parent
 	
 class WindowWidget(FloatLayout):
 	control = None
 	visualizer = None
-	popup_menu = None
 	
 	def __init__(self, **kwargs):
 		super(WindowWidget,self).__init__(**kwargs)
-		
-		'''
-		THIS IS WHERE THE POPUP WILL FIRST BE DEFINED
-		'''
-		
-		self.popup_menu = Popup(title='Place Holder', content=Label(text='hello, place'), size_hint=(None,None), size=(400,400))	
-
-		'''
-		You can then access the popup from any widget by use of the following commands: 
-																		"self.get_ctrl().get_window().popup_menu"
-		
-		exlpanation:
-		-----------
-		"get_ctrl()" is a command available to all widgets that returns the Control widget.
-		
-		"get_window()" is a command from Control that returns the current WindowWidget (yes, this widget, right here).
-		
-		And yeah, from here, as you can tell, you have acces to the popup_menu
-		'''
-		
 		self.control = Control()
 		self.add_widget(self.control)
 		
@@ -453,40 +409,29 @@ class TreeVisApp(App):
 		
 		parent = WindowWidget()
 		parent.take_visualizer(td.treeVis)
+		'''
+		treevis = TreeVisualizer()
+		treevis.add_edge((0,2),(4,4))
+		treevis.add_edge((4,4),(6,2))
+		treevis.add_node((0,2))
+		treevis.add_node((4,4))
+		treevis.add_node((6,2))
+		parent.add_widget(treevis)
+		'''
 		
 		return parent
 
 if __name__ == '__main__':
     TreeVisApp().run()
-
-	
 '''
-How the program works:
----------------------
-
-hierarchy:
-
-	WindowWidget:
-		
-		relevant instance vars
-		-------------
-			popup_menu:
-		
-		children
-		--------
-			Control:
-			TreeVisualizer:
-				children
-				--------
-					ScreenWidget: #think of this not as the screen on which stuff is dislayed, more like a 
-								  screen in front of a zoo exhibit. Its purpose is to track touch commands 
-								  "over" all the rest of the widgets.#
-					GraphWidget:
-						children
-						--------
-							graph_nodes(GraphItems): #Node layer#
-							graph_edges(GraphItems): #Edge layer#
-				
-As aforementioned, from just about any widget, the command "get_ctrl()" is available and returns Control.
+Notes
+Nice colors: 
+	1,0.4,0.5,1
 '''
-		
+
+#ALSO: fix the graph widget so it is no longer scatter??? so to fix maybe this ^ thing by not
+#having to care about box size anymore, also to fix the button scalling issue
+#Finish implementing thing for edge index so select works for both nodes and edges
+#Make highlight() functions for edges and nodes and test and link them to select() functions
+#connect nodes and edges to their data representations and put the data rep of the tree somewhere too
+#Single paramater for graph scale (coz right now you have one for each graph_item planes (edge/node)

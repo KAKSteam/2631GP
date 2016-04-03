@@ -1,13 +1,17 @@
 #:kivy  1.8.0
 
+<InfoWidget>:
+	tag: "<insert tag>"
+	Label:
+		text: root.tag
+
 <GraphItems>:
-	scale_index:20
+	scale_index: 20
 	size_hint: None, None
 	size: self.scale_index, self.scale_index
 	
-<GraphWidget@Scatter>:
-	auto_bring_to_front: False
-	do_translation: False
+<GraphWidget>:
+	scale_index: 20
 	bounding_box: 0, 0
 
 <CircularButton@Button>
@@ -28,11 +32,12 @@
 		self.background_color = self.color
 		
 <Node>:
+	tag:"<node_tag>"
 	radius: 40	#to be patched (something weird happens if you set it to 1)
 	color: .4, .7, 1, 1
 	active_color: .6, .9, 1, 1
 	
-	size_hint: self.radius, self.radius
+	size: self.radius, self.radius
 	
 	pos_x: 0
 	pos_y: 0
@@ -47,9 +52,16 @@
 		
 		center_x: root.center_x
 		center_y: root.center_y
-	
+		
+		InfoWidget:
+			size: handle.radius*3, handle.radius
+			center_x: handle.center_x
+			center_y: handle.center_y + handle.radius
+			
+			tag: root.tag
 	
 <Edge>:
+	tag: "<edge_tag>"
 	handle_size: 20
 	color: .4, .7, 1, 1
 	active_color: .6, .9, 1, 1
@@ -80,15 +92,25 @@
 		center_y: root.y + root.height*root.y_mod*0.5
 		on_press:
 			print "edgy"
+		
+		InfoWidget:
+			size: handle.radius*5, + handle.radius
+			center_x: handle.center_x
+			center_y: handle.center_y + handle.radius
+		
+			tag: root.tag
 	
 <ScreenWidget>:
 	#THIS EXISTS#
 
 <TreeVisualizer>:
-
-	graph_size: 100,100
+	
 	scale_index: 60
 	node_radius: 40
+	graph_width: 100
+	graph_height: 100
+	graph_size: self.graph_width, self.graph_height
+	item_pos: 0, 0
 
     canvas:
         Color:
@@ -100,23 +122,26 @@
 	GraphWidget:
 		id: graph
 		pos: 0, 0
-		size: root.graph_size
+		scale_index: root.scale_index
+		size: root.graph_width*self.scale_index + root.node_radius, root.graph_height*self.scale_index + root.node_radius
+	
+		item_pos: self.x + root.item_pos[0]*self.scale_index + root.node_radius*0.5, self.y + root.item_pos[1]*self.scale_index + root.node_radius*0.5
 		
 		canvas:
 			Color:
 				rgba: 1, 0.5, 1, 0.2
 			Rectangle:
-				pos: 0, 0
+				pos: self.pos
 				size: self.size
 		
 		GraphItems:
-			pos: root.pos
+			pos: graph.item_pos
 			id: graph_edges
-			scale_index: root.scale_index
+			scale_index: graph.scale_index
 		GraphItems:
-			pos: root.pos
+			pos: graph.item_pos
 			id: graph_nodes
-			scale_index: root.scale_index
+			scale_index: graph.scale_index
 		
 	ScreenWidget:
 		id: screen
