@@ -52,6 +52,7 @@ def load(path):
 
 			nodeAttrs = parts[1].split(';')
 			numNodeAttrs = nodeAttrs.pop(0)
+			graph.nodeAttrs = nodeAttrs
 			#print numNodeAttrs
 			#print isInt(numNodeAttrs)
 

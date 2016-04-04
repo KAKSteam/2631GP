@@ -1,0 +1,91 @@
+<RootWidget>:
+    AnchorLayout:
+        anchor_y: 'top'
+        anchor_x: 'center'
+        GridLayout:
+            size_hint_y: 0.1
+            cols: 3
+			Button:
+				text: "Menu"
+				on_release: menu.open(self)
+			DropDown:
+				id: menu
+				on_parent: self.dismiss()
+				DDButton:
+					text: "Load Graph"
+					on_press: root.show_Load()
+				DDButton:
+					text: "Clear Screen"
+					on_press: root.clear_Canvas()
+				DDButton:
+					text: "Debug Info"
+					on_press: root.display_Debug()
+				DDButton:
+					text: "Exit Program"
+					on_press: root.exit_App()
+			Button:
+				text: "Graph Tools"
+				on_release: treeBar.open(self)
+			DropDown:
+				id: treeBar
+				on_parent: self.dismiss()
+				DDBoxLayout:
+					Label:
+						text: "Highlight Path to Root"
+						size_hint: (0.8, 1)
+					CheckBox:
+						size_hint: (0.2, 1)
+				DDBoxLayout:
+					Label:
+						text: "Highlight Subtree"
+						size_hint: (0.8, 1)
+					CheckBox:
+						size_hint: (0.2, 1)
+				DDBoxLayout:
+					Label: 
+						text: "Highlight Same Depth"
+					CheckBox:
+						size_hint: (0.2, 1)
+			Label:
+				text: "Scale Factors"
+    FloatLayout:
+        id: visualizer
+        size_hint: (1, 0.9)
+        				
+<DDButton@Button>
+	size_hint_y: None
+	height: 44
+
+<DDBoxLayout@BoxLayout>
+	orientation: "horizontal"
+	size_hint_y: None
+	height: 44
+	canvas:
+		Color:
+			rgb: 0.3, 0.3, 0.3
+		RoundedRectangle:
+			size: self.width - 1, self.height - 1
+			pos: self.pos
+			radius: 2, 2
+	
+<LoadGraph>:
+	BoxLayout:
+		size: root.size
+		pos: root.pos
+		orientation: "vertical"
+		FileChooserListView:
+			id: filechooser
+
+		BoxLayout:
+			size_hint_y: None
+			height: 30
+			Button:
+				text: "Cancel"
+				on_release: root.cancel()
+
+			Button:
+				text: "Load"
+				on_release: root.load(filechooser.path, filechooser.selection)
+		
+    
+		

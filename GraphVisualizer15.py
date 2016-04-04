@@ -99,6 +99,10 @@ class Node(FloatLayout):
 			self.info_text += str(attr) + ": " + str(val) + "\n"
 		self.info_box.content.text = self.info_text
 		
+	def rotate_tag(self):
+		new_index = (self.tag_index + 1)%len(self.data)
+		self.change_tag(new_index)
+		
 	def change_tag(self, idx):
 		if idx < 0 or idx >= len(self.data):
 			print "idx out of range; the tag was not changed"
@@ -109,6 +113,7 @@ class Node(FloatLayout):
 	
 	def refresh_tag_data(self):
 		self.tag = self.data[self.tag_index]
+		self.tag_widget.tag = self.tag
 		self.info_box.title = self.tag
 		
 	def interact(self, value):
@@ -429,7 +434,7 @@ class TreeVisualizer(Widget):
 		for part in (self.edge_widgets + self.node_widgets):
 			if part != None:
 				self.graph_items.add_widget(part)
-				if type(part) == Node: part.generate_info_text(); part.change_tag(1)
+				if type(part) == Node: part.generate_info_text()
 				part.generate_tag()
 		self.show_tags()
 	
@@ -517,6 +522,8 @@ class Control(Widget):
 	ctrl_down = False
 	
 	graph_data = None
+	node_numAttrs = 0
+	edge_numAttrs = 0
 	
 	def __init__(self, **kwargs):
 		super(Control,self).__init__(**kwargs)
@@ -536,10 +543,14 @@ class Control(Widget):
 		if keycode[1] == 'lctrl':
 			if self.ctrl_down == False:
 				self.ctrl_down = True
+				print "CONTROL", self.ctrl_down
 		if keycode[1] == 'd':
 			print self.selection_1, self.selection_2
 		if keycode[1] == 'n':
-			self.toggle_ntag_visibility()
+			if self.ctrl_down:
+				self.rotate_ntags()
+			else:
+				self.toggle_ntag_visibility()
 		if keycode[1] == 'e':
 			self.toggle_etag_visibility()
 		return True
@@ -547,6 +558,7 @@ class Control(Widget):
 	def _on_keyboard_up(self, keyboard, keycode):
 		if keycode[1] == 'lctrl':
 			self.ctrl_down = False
+			print "CONTROL", self.ctrl_down
 		return True
 	
 	#GRAPH MANAGEMENT
@@ -598,6 +610,16 @@ class Control(Widget):
 			self.show_etags()
 		else:
 			self.hide_etags()
+		
+	def rotate_ntags(self):
+		for node in self.get_visualizer().node_widgets:
+			node.rotate_tag()
+		'''
+		The tags weren't updating their position until the graph was moved. As a quick fix
+		I've opted to 'nudge' the graph after rotating tags. This ought to only be temporary though.
+		'''
+		
+		self.get_visualizer().graph.move((0.000000000001,0.000000000001))
 		
 	def select(self,item):
 		if item.i in (self.selection_1, self.selection_2):

@@ -1,0 +1,10 @@
+in order to get a reliable edge index for the trees, I resorted to using the index
+of the child it let to. In retrospect, I might have taken that index -1 and made
+a hashing algorithm for the tuple representing the tree which would take the last
+index -1.
+
+had to double the initialization of first edge and first node, wish i could have taken
+the time to find an elegant solution to the glitch first initialization seemed to have.
+
+had to "nudge" the graph widget after switching the tags because they would other
+wise not update to the right location. Also something I'd like to have changed.

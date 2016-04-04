@@ -8,7 +8,8 @@
 	size_hint: None, None
 	size: self.target_radius, self.target_radius
 	
-	char_width: 9
+	border:15
+	char_width: 7
 	char_height: 40
 	tag: "<insert tag>"
 	
@@ -18,7 +19,7 @@
 		center_x: root.center_x
 		y: root.top
 		size_hint: None, None
-		size: len(root.tag)*root.char_width, root.char_height
+		size: len(root.tag)*root.char_width + root.border*2, root.char_height
 		Label:
 			text: root.tag
 
@@ -132,12 +133,12 @@
 	
 		item_pos: self.x + root.item_pos[0]*self.scale_index + root.node_radius*0.5, self.y + root.item_pos[1]*self.scale_index + root.node_radius*0.5
 		
-		canvas:
-			Color:
-				rgba: 1, 0.5, 1, 0.2
-			Rectangle:
-				pos: self.pos
-				size: self.size
+		#canvas:
+		#	Color:
+		#		rgba: 1, 0.5, 1, 0.2
+		#	Rectangle:
+		#		pos: self.pos
+		#		size: self.size
 		
 		GraphItems:
 			pos: graph.item_pos

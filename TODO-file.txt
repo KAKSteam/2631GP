@@ -57,3 +57,7 @@ changes:
 	control.select(): not takes in an object to directly perform select() and takes its "i" (soon to be renamed "id")
 	Edge: edge ids are tuples, control.select() performs by detecting if it is a tuple or an int
 	Tag: added tag to nodes and edges
+
+edges:
+	change index to head_index-1 and making hash_edge_id() function and
+	plug into get_edge()
