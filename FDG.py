@@ -89,9 +89,10 @@ def FDG(G,x,tol):
 	for i in range(0,len(x)):
 		
 		for j in range(0,len(x[i])):
-			print x[i][j]
 			x[i][j] = int(x[i][j]/100)
-			print x[i][j]
-	return G,x
+	return (G,x)
 def sLoad(path):
-	return FDG(load(path),[(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)],9)
+	G,x = FDG(load(path),[(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0),(0,0)],8)
+	print G,x
+	return (G,x)
+sLoad("att.txt")

@@ -18,16 +18,9 @@ def loadG(path):
 
 class VisWidget(Widget):
  	
-	G,x = loadG("EWDGraphFinal.txt")
-	nodeImage = []
-	edgeImage = []
-	print G
-	print x
-	def __init__(self, trd,**kwargs):
-		#inherits the super constructor from its parent class
-		super(VisWidget,self).__init__(**kwargs)
-		self.axis = a
-		self.scale = s
+	G,x = loadG("att.txt")
+	#nodeImage = []
+	#edgeImage = []
 			
 	def node(self, pos, col=defaultColor):
 		x, y = pos
@@ -90,7 +83,7 @@ class MyVisApp(App):
 		#self.tree.node(pos2,defaultColor)
 		#self.tree.edge(pos1,pos2,defaultColor)
 
-		parent.add_widget(graph)
+		#parent.add_widget(graph)
 		return parent
 
 	def clearCanvas(self, obj):
