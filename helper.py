@@ -27,10 +27,17 @@ def brighten(col, amount):
 		r, g, b, a = col
 		return r + amount, g + amount, b + amount, a
 	
-def invert_color(col):
+def color_complement(col):
 	if len(col) == 3:
 		r, g, b = col
-		return b, r, g
+		return 1 - r, 1 - g, 1 - b
 	if len(col) == 4:
 		r, g, b, a = col
-		return b, r, g, a
+		return 1 - r, 1 - g, 1 - b, a
+		
+def luminescence(col):
+	luminescence = 0
+	for i in range(0,3):
+		luminescence += col[i]
+		luminescence *= 0.33
+	return luminescence

@@ -743,7 +743,7 @@ class WindowWidget(FloatLayout):
 class GraphVisApp(App):
     def build(self):
 		
-		t = load("BigTGraph.txt")
+		t = load("OtherTGraph.txt")
 		td = treeData(t)
 		parent = WindowWidget()
 		parent.take_graph_data(td.t)

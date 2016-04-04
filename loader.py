@@ -44,6 +44,8 @@ def load(path):
 		graph = digraph()		
 		print 'GRAPH TYPE: EWD'
 
+	graph.nodeAttrs = []
+	graph.edgeAttrs = []
 	#print type(graph)
 	for linenum,line in enumerate(file):
 		if (linenum == 0): 

@@ -8,3 +8,13 @@ the time to find an elegant solution to the glitch first initialization seemed t
 
 had to "nudge" the graph widget after switching the tags because they would other
 wise not update to the right location. Also something I'd like to have changed.
+
+I also realize everything I called radius is actually the diameter but I was in too
+deep. Ima change that soon.
+
+edge initializes normal and color as same values with different names, preferably
+would have found a way around this but oh well
+
+holy crap, I set the visualizer's node and edge widget lists to be 128 by default and forgot
+to assign values when initializing my visualiser. It hasn't affected user exprience
+only it's kind of ugly to be aware of.

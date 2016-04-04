@@ -1,4 +1,4 @@
-#:kivy  1.9.1
+#:kivy  1.8.0
 #:import brighten helper
 #:import color_complement helper
 #:import luminescence helper

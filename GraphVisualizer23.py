@@ -7,7 +7,7 @@ from kivy.core.window import Window
 from kivy.uix.scatter import Scatter
 from kivy.graphics.transformation import Matrix
 from kivy.uix.floatlayout import FloatLayout
-from helper import zero_patch, there_is, brighten
+from helper import zero_patch, there_is, brighten, color_complement, luminescence
 from loader import load
 from kivy.uix.bubble import Bubble
 from kivy.uix.button import Button
@@ -35,6 +35,53 @@ scale_treshold = 45
 zoom_out_limit = 0
 zoom_in_limit = 1500
 
+highlight_val = 0.2
+
+# Provides helper methods for tree data, in order to make the main code easier to read
+class TreeHelper():
+	buffer = []
+
+	@staticmethod
+	def get_common_root(t,nid1,nid2):
+	
+		path_nid1 = reversed(list(t.rsearch(nid1)))
+		path_nid2 = reversed(list(t.rsearch(nid2)))
+		
+		last_step = 0
+		for step1, step2 in zip(path_nid1,path_nid2):
+			if step1 != step2:
+				return last_step
+			last_step = step1
+		
+		return last_step
+		
+	@staticmethod
+	def get_common_subtree(t,nid1,nid2):
+	
+		a = TreeHelper.get_common_root(t,nid1,nid2)
+		return t.subtree(a)
+		
+	@staticmethod
+	def get_at_depth(t, nid, depth):
+		if nid == 0 and depth == 1:
+			TreeHelper.buffer.append(nid)
+			
+		if depth <= 1:
+			return nid
+		
+		for cid in t.get_node(nid).fpointer:
+			TreeHelper.buffer.append(TreeHelper.get_at_depth(t,cid,depth-1))
+			
+	@staticmethod
+	def dump_buffer():
+		buff = TreeHelper.buffer
+		TreeHelper.buffer = []
+		return buff
+		
+	@staticmethod
+	def distance_to_root(t, nid):
+		return len(list(t.rsearch(nid)))
+
 class TagWidget(FloatLayout):
 	def __init__(self, **kwargs):
 		super(TagWidget, self).__init__(**kwargs)
@@ -55,6 +102,7 @@ class CircularButton(Button):
 class Node(FloatLayout):
 
 	selected = False
+	highlit = False
 	i = None
 	data = []
 	
@@ -76,8 +124,8 @@ class Node(FloatLayout):
 		if there_is(data):
 			self.data = data
 		
-		self.tag = self.data[self.tag_index] if (len(self.data)>0) else str(self.i)
-		self.info_box=Popup(title=self.tag, content=Label(text='<no data>'), size_hint=(None,None), size=(400,400))
+		self.tag = self.data[self.tag_index] if (len(self.data)>0) else "node "+str(self.i)
+		self.info_box=Popup(title=self.tag, content=Label(text='<data void>'), size_hint=(None,None), size=(400,400))
 		
 		#Size correcting in case the tag is of length 128
 	
@@ -94,18 +142,20 @@ class Node(FloatLayout):
 		
 	def generate_info_text(self):
 		attrs = self.get_ctrl().graph_data.nodeAttrs
+		if len(attrs) <= 0: return
 		for attr, val in zip(attrs, self.data):
 			self.info_text += str(attr) + ": " + str(val) + "\n"
 		self.info_box.content.text = self.info_text
 		
 	def rotate_tag(self):
+		if len(self.data) <= 0: return
 		new_index = (self.tag_index + 1)%len(self.data)
 		self.change_tag(new_index)
 		
 	def change_tag(self, idx):
 		if idx < 0 or idx >= len(self.data):
 			print "idx out of range; the tag was not changed"
-			pass
+			return
 		self.tag_index = idx
 		
 		self.refresh_tag_data()
@@ -127,18 +177,43 @@ class Node(FloatLayout):
 				print "display node options"
 			
 	def select(self):
+		global highlight_val
 		if not self.selected:
 			self.selected = True
-			print self.i, "selected"
 			#self.add_widget(self.selected_mask)
-			self.ids['handle'].color = brighten(self.color, 0.2)
+			self.ids['handle'].color = brighten(self.color, highlight_val)
+			print self.i, "selected"
 		
 	def deselect(self):
 		if self.selected:
 			self.selected = False
-			print self.i, "deselected"
 			#self.remove_widget(self.selected_mask)
-			self.ids['handle'].color = self.color
+			if not self.highlit:
+				self.ids['handle'].color = self.color
+			print self.i, "deselected"
+			
+	def highlight(self, color_shift=None):
+		global highlight_val
+		if not self.highlit:
+			self.highlit = True
+			
+			if there_is(color_shift):
+				self.color = color_shift
+				
+			lum = luminescence(self.color)
+			new_color = color_complement(self.color)
+			new_color = brighten(new_color, lum + highlight_val)
+			self.ids['handle'].color = new_color
+			print self.i, "highlit"
+			
+	def unlight(self):
+		if self.highlit:
+			self.highlit = False
+			if self.selected:
+				self.ids['handle'].color = brighten(self.color, highlight_val)
+			else:
+				self.ids['handle'].color = self.color
+			print self.i, "unlit"
 			
 	def get_ctrl(self):
 		return self.parent.get_ctrl()
@@ -156,6 +231,8 @@ class Edge(FloatLayout):
 	
 	tag_index=0
 
+	highlit = False
+	
 	def __init__(self, i, tail=None, head=None, data=None, color=None, **kwargs):
 		super(Edge, self).__init__(**kwargs)
 		
@@ -172,8 +249,8 @@ class Edge(FloatLayout):
 		self.y_mod = zero_patch(self.head_y, self.tail_y)
 		self.i = i
 		
-		self.tag = self.data[self.tag_index] if (len(self.data)>0) else str(self.i)
-		self.info_box=Popup(title=self.tag, content=Label(text='<no data>'), size_hint=(None,None), size=(400,400))
+		self.tag = self.data[self.tag_index] if (len(self.data)>0) else "edge "+str(self.i)
+		self.info_box=Popup(title=self.tag, content=Label(text='<data void>'), size_hint=(None,None), size=(400,400))
 		
 		self.ids['handle'].bind(on_release=self.interact)
 	
@@ -193,9 +270,28 @@ class Edge(FloatLayout):
 		
 	def generate_info_text(self):
 		attrs = self.get_ctrl().graph_data.edgeAttrs
+		if len(attrs) <= 0: return
 		for attr, val in zip(attrs, self.data):
 			self.info_text += str(attr) + ": " + str(val) + "\n"
 		self.info_box.content.text = self.info_text
+		
+	def rotate_tag(self):
+		if len(self.data) <= 0: return
+		new_index = (self.tag_index + 1)%len(self.data)
+		self.change_tag(new_index)
+		
+	def change_tag(self, idx):
+		if idx < 0 or idx >= len(self.data):
+			print "idx out of range; the tag was not changed"
+			return
+		self.tag_index = idx
+		
+		self.refresh_tag_data()
+	
+	def refresh_tag_data(self):
+		self.tag = self.data[self.tag_index]
+		self.tag_widget.tag = self.tag
+		self.info_box.title = self.tag
 	
 	def interact(self, value):
 		if self.get_ctrl().touch_button == 'left':
@@ -209,18 +305,53 @@ class Edge(FloatLayout):
 				print "display edge options"
 			
 	def select(self):
+		global highlight_val
 		if not self.selected:
 			self.selected = True
 			print self.i, "selected"
 			#self.add_widget(self.selected_mask)
-			self.ids['handle'].color = brighten(self.color, 0.2)
-		
+			self.ids['handle'].color = brighten(self.normal_color, highlight_val)
+			
 	def deselect(self):
 		if self.selected:
 			self.selected = False
 			print self.i, "deselected"
 			#self.remove_widget(self.selected_mask)
+			self.ids['handle'].color = self.normal_color
+			
+	def highlight(self, color_shift=None):
+		global highlight_val
+		if not self.highlit:
+			self.highlit = True
+			
+			if there_is(color_shift):
+				self.color = color_shift
+			
+			lum = luminescence(self.color)
+			
+			#generate new color
+			r, g, b, a = brighten(color_complement(self.color), lum + highlight_val*2)
+			
+			#assign light_switch value to alpha
+			new_color = r, g, b, 1
+			
+			self.color = new_color
 			self.ids['handle'].color = self.color
+			print self.i, "highlit"
+			
+	def unlight(self):
+		if self.highlit:
+			self.highlit = False
+			
+			r, g, b, a = self.normal_color
+			self.color = r, g, b, 0
+			
+			if self.selected:
+				self.ids['handle'].color = brighten(self.normal_color, highlight_val)
+			else:
+				self.ids['handle'].color = self.normal_color
+			
+			print self.i, self.highlit
 		
 	def get_ctrl(self):
 		return self.parent.get_ctrl()
@@ -329,9 +460,9 @@ class treeData():
 		edge is leading up to as the edge's index, since we know this will always be a unique value for edges.
 		'''
 		
-		t.edgeAttrs = ["element","time","animal"]
+		#t.edgeAttrs = ["element","time","animal"]
 		
-		if nid != 0: self.treeVis.add_edge((pid, nid),root_pos,pos,["fire","noon","cardinal"]) #only print the edge if it is not a root
+		if nid != 0: self.treeVis.add_edge((pid, nid),root_pos,pos) #only print the edge if it is not a root
 		
 		print self.graph_leftmost, self.graph_rightmost, self.graph_bottommost
 		for cid in t.get_node(nid).fpointer:
@@ -523,7 +654,9 @@ class ScreenWidget(Widget):
 		'''
 		THIS IS THE RIGHT-CLICK EVENT
 		'''
-			
+		if touch.button == 'left':
+			self.get_ctrl().graph_tools.clear()
+		
 		if touch.button == 'right':
 		
 			'''
@@ -560,6 +693,10 @@ class Control(Widget):
 	node_numAttrs = 0
 	edge_numAttrs = 0
 	
+	graph_type = None
+	
+	graph_tools = None
+	
 	def __init__(self, **kwargs):
 		super(Control,self).__init__(**kwargs)
 		
@@ -579,15 +716,37 @@ class Control(Widget):
 			if self.ctrl_down == False:
 				self.ctrl_down = True
 				print "CONTROL", self.ctrl_down
-		if keycode[1] == 'd':
-			print self.selection_1, self.selection_2
 		if keycode[1] == 'n':
 			if self.ctrl_down:
 				self.rotate_ntags()
 			else:
 				self.toggle_ntag_visibility()
 		if keycode[1] == 'e':
-			self.toggle_etag_visibility()
+			if self.ctrl_down:
+				self.rotate_etags()
+			else:
+				self.toggle_etag_visibility()
+		if keycode[1] == 'p':
+			if type(self.selection_1) is int:
+				self.graph_tools.path_to_root(self.selection_1)
+			elif type(self.selection_2) is int:
+				self.graph_tools.path_to_root(self.selection_2)
+			else:
+				print "can only trace the root path starting from a node"
+		if keycode[1] == 'r':
+			if type(self.selection_1) is int and type(self.selection_2) is int:
+				self.graph_tools.subtree(self.selection_1,self.selection_2)
+			else:
+				print "can only get common tree from node selection"
+		if keycode[1] == 'd':
+			if type(self.selection_1) is int:
+				self.graph_tools.at_same_depth(self.selection_1)
+			elif type(self.selection_2) is int:
+				self.graph_tools.at_same_depth(self.selection_2)
+			else:
+				print "can only get common depth of nodes"
+		if keycode[1] == 'c':
+			self.graph_tools.clear()
 		return True
 		
 	def _on_keyboard_up(self, keyboard, keycode):
@@ -600,7 +759,7 @@ class Control(Widget):
 	
 	def take_graph_data(self, g):
 		self.graph_data = g
-		print self.graph_data.nodeAttrs
+		self.graph_type = type(g)
 	
 	def get_graph_node(self,i):
 		print self.parent.visualizer.node_widgets[i], self.parent.visualizer.node_widgets[i].i
@@ -656,18 +815,29 @@ class Control(Widget):
 		
 		self.get_visualizer().graph.move((0.000000000001,0.000000000001))
 		
+	def rotate_etags(self):
+		for edge in self.get_visualizer().edge_widgets:
+			if edge != None: edge.rotate_tag()
+		'''
+		The tags weren't updating their position until the graph was moved. As a quick fix
+		I've opted to 'nudge' the graph after rotating tags. This ought to only be temporary though.
+		'''
+		
+		self.get_visualizer().graph.move((0.000000000001,0.000000000001))
+		
 	def select(self,item):
 		if item.i in (self.selection_1, self.selection_2):
 			print item.i, " is already selected"
-			pass
+			return
 		elif self.selection_1 == None:
 			item.select()
 			self.selection_1 = item.i
-			print "[slot 1]", self.selection_1, self.selection_2
+			print "[select]", self.selection_1, self.selection_2
 		elif self.selection_2 == None:
 			item.select()
-			self.selection_2 = item.i
-			print "[slot 2]", self.selection_1, self.selection_2
+			self.selection_2 = self.selection_1
+			self.selection_1 = item.i
+			print "[select]", self.selection_1, self.selection_2
 		else:
 			self.clear_selection()
 			item.select()
@@ -734,11 +904,52 @@ class WindowWidget(FloatLayout):
 		self.visualizer = v
 		self.add_widget(self.visualizer)
 		
+		if self.get_ctrl().graph_type is Tree:
+			self.get_ctrl().graph_tools = TreeTools(self.visualizer, self.get_ctrl().graph_data)
+		
 	def take_graph_data(self,g):
 		self.control.take_graph_data(g)
 	
 	def get_ctrl(self):
 		return self.control
+			
+class TreeTools():
+
+	tree_widget = None
+	tree_data = None
+		
+	def __init__(self, tree_widget, tree_data):
+		self.tree_widget = tree_widget
+		self.tree_data = tree_data
+		print self, self.tree_data, self.tree_widget
+		
+	def path_to_root(self, nid):
+		path_gen = self.tree_data.rsearch(nid)
+		for step_id in path_gen:
+			self.tree_widget.node_widgets[step_id].highlight()
+			if step_id != 0:
+				self.tree_widget.edge_widgets[step_id].highlight()
+				
+	def subtree(self, nid1, nid2):
+		subtree = TreeHelper.get_common_subtree(self.tree_data, nid1, nid2)
+		for node in subtree.all_nodes():
+			nid = node.identifier
+			self.tree_widget.node_widgets[nid].highlight()
+			if nid != subtree.root:
+				self.tree_widget.edge_widgets[nid].highlight()
+			
+	def at_same_depth(self, nid):
+		depth = TreeHelper.distance_to_root(self.tree_data, nid)
+		TreeHelper.get_at_depth(self.tree_data, self.tree_data.root, depth)
+		for nid in TreeHelper.dump_buffer():
+			if nid != None:
+				self.tree_widget.node_widgets[nid].highlight()
+				
+	def clear(self):
+		for item in self.tree_widget.edge_widgets + self.tree_widget.node_widgets:
+			if item != None: item.unlight()
+	
+	#def same_depth():
 			
 class GraphVisApp(App):
     def build(self):

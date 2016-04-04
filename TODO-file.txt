@@ -61,3 +61,13 @@ changes:
 edges:
 	change index to head_index-1 and making hash_edge_id() function and
 	plug into get_edge()
+
+
+
+
+
+todo: connect edge data
+          define highlight function
+          define tree tools
+          connect to GUI 
+	fix the 128 size of node and edge widget lists

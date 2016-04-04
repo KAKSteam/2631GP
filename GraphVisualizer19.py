@@ -76,8 +76,8 @@ class Node(FloatLayout):
 		if there_is(data):
 			self.data = data
 		
-		self.tag = self.data[self.tag_index] if (len(self.data)>0) else str(self.i)
-		self.info_box=Popup(title=self.tag, content=Label(text='<no data>'), size_hint=(None,None), size=(400,400))
+		self.tag = self.data[self.tag_index] if (len(self.data)>0) else "node "+str(self.i)
+		self.info_box=Popup(title=self.tag, content=Label(text='<data void>'), size_hint=(None,None), size=(400,400))
 		
 		#Size correcting in case the tag is of length 128
 	
@@ -94,18 +94,20 @@ class Node(FloatLayout):
 		
 	def generate_info_text(self):
 		attrs = self.get_ctrl().graph_data.nodeAttrs
+		if len(attrs) <= 0: return
 		for attr, val in zip(attrs, self.data):
 			self.info_text += str(attr) + ": " + str(val) + "\n"
 		self.info_box.content.text = self.info_text
 		
 	def rotate_tag(self):
+		if len(self.data) <= 0: return
 		new_index = (self.tag_index + 1)%len(self.data)
 		self.change_tag(new_index)
 		
 	def change_tag(self, idx):
 		if idx < 0 or idx >= len(self.data):
 			print "idx out of range; the tag was not changed"
-			pass
+			return
 		self.tag_index = idx
 		
 		self.refresh_tag_data()
@@ -140,6 +142,9 @@ class Node(FloatLayout):
 			#self.remove_widget(self.selected_mask)
 			self.ids['handle'].color = self.color
 			
+	#def highlight(self):
+		
+			
 	def get_ctrl(self):
 		return self.parent.get_ctrl()
 		
@@ -172,8 +177,8 @@ class Edge(FloatLayout):
 		self.y_mod = zero_patch(self.head_y, self.tail_y)
 		self.i = i
 		
-		self.tag = self.data[self.tag_index] if (len(self.data)>0) else str(self.i)
-		self.info_box=Popup(title=self.tag, content=Label(text='<no data>'), size_hint=(None,None), size=(400,400))
+		self.tag = self.data[self.tag_index] if (len(self.data)>0) else "edge "+str(self.i)
+		self.info_box=Popup(title=self.tag, content=Label(text='<data void>'), size_hint=(None,None), size=(400,400))
 		
 		self.ids['handle'].bind(on_release=self.interact)
 	
@@ -193,9 +198,28 @@ class Edge(FloatLayout):
 		
 	def generate_info_text(self):
 		attrs = self.get_ctrl().graph_data.edgeAttrs
+		if len(attrs) <= 0: return
 		for attr, val in zip(attrs, self.data):
 			self.info_text += str(attr) + ": " + str(val) + "\n"
 		self.info_box.content.text = self.info_text
+		
+	def rotate_tag(self):
+		if len(self.data) <= 0: return
+		new_index = (self.tag_index + 1)%len(self.data)
+		self.change_tag(new_index)
+		
+	def change_tag(self, idx):
+		if idx < 0 or idx >= len(self.data):
+			print "idx out of range; the tag was not changed"
+			return
+		self.tag_index = idx
+		
+		self.refresh_tag_data()
+	
+	def refresh_tag_data(self):
+		self.tag = self.data[self.tag_index]
+		self.tag_widget.tag = self.tag
+		self.info_box.title = self.tag
 	
 	def interact(self, value):
 		if self.get_ctrl().touch_button == 'left':
@@ -329,9 +353,9 @@ class treeData():
 		edge is leading up to as the edge's index, since we know this will always be a unique value for edges.
 		'''
 		
-		t.edgeAttrs = ["element","time","animal"]
+		#t.edgeAttrs = ["element","time","animal"]
 		
-		if nid != 0: self.treeVis.add_edge((pid, nid),root_pos,pos,["fire","noon","cardinal"]) #only print the edge if it is not a root
+		if nid != 0: self.treeVis.add_edge((pid, nid),root_pos,pos) #only print the edge if it is not a root
 		
 		print self.graph_leftmost, self.graph_rightmost, self.graph_bottommost
 		for cid in t.get_node(nid).fpointer:
@@ -587,7 +611,10 @@ class Control(Widget):
 			else:
 				self.toggle_ntag_visibility()
 		if keycode[1] == 'e':
-			self.toggle_etag_visibility()
+			if self.ctrl_down:
+				self.rotate_etags()
+			else:
+				self.toggle_etag_visibility()
 		return True
 		
 	def _on_keyboard_up(self, keyboard, keycode):
@@ -656,10 +683,20 @@ class Control(Widget):
 		
 		self.get_visualizer().graph.move((0.000000000001,0.000000000001))
 		
+	def rotate_etags(self):
+		for edge in self.get_visualizer().edge_widgets:
+			if edge != None: edge.rotate_tag()
+		'''
+		The tags weren't updating their position until the graph was moved. As a quick fix
+		I've opted to 'nudge' the graph after rotating tags. This ought to only be temporary though.
+		'''
+		
+		self.get_visualizer().graph.move((0.000000000001,0.000000000001))
+		
 	def select(self,item):
 		if item.i in (self.selection_1, self.selection_2):
 			print item.i, " is already selected"
-			pass
+			return
 		elif self.selection_1 == None:
 			item.select()
 			self.selection_1 = item.i
@@ -743,7 +780,7 @@ class WindowWidget(FloatLayout):
 class GraphVisApp(App):
     def build(self):
 		
-		t = load("BigTGraph.txt")
+		t = load("TGraphFinal.txt")
 		td = treeData(t)
 		parent = WindowWidget()
 		parent.take_graph_data(td.t)

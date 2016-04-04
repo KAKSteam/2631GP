@@ -1,7 +1,4 @@
-#:kivy  1.9.1
-#:import brighten helper
-#:import color_complement helper
-#:import luminescence helper
+#:kivy  1.8.0
 
 <TagWidget>:
 	target_x: 0
@@ -77,12 +74,8 @@
 <Edge>:
 	tag: "<edge_tag>"
 	handle_size: 20
-	normal_color: .4, .7, 1, 1
+	color: .4, .7, 1, 1
 	active_color: .6, .9, 1, 1
-	color: .4, .7, 1, 0
-	
-	light_switch: 0
-	line_color: 0, 0, 0
 	
 	tail_x: 0
 	tail_y: 0
@@ -102,14 +95,6 @@
 			width: 2
 			points: self.x, self.y, self.x + self.width*self.x_mod, self.y + self.height*self.y_mod
 
-		Color:
-			rgba: self.color[0], self.color[1], self.color[2], self.color[3]
-			
-		Line:
-			width: 1.01
-			points: self.x, self.y, self.x + self.width*self.x_mod, self.y + self.height*self.y_mod
-
-			
 	CircularButton:
 		id: handle
 		radius: root.handle_size

@@ -28,7 +28,7 @@ from treelib import Node
 from pygraph.classes.digraph import digraph
 
 # Provides helper methods in order to make the main code easier to read
-class Helper():
+class TreeHelper():
 	@staticmethod
 	def getCommonRoot(t,nid1,nid2):
 	
