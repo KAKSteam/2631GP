@@ -20,12 +20,19 @@ def zero_patch(n1, n2):
 	return 1
 	
 def brighten(col, amount):
+	lum = 0
+	for i in range(3):
+		new_lum = 1-col[i]
+		if new_lum > lum: lum = new_lum
+		
+	lum = lum*amount
+	
 	if len(col) == 3:
 		r, g, b = col
-		return r + amount, g + amount, b + amount
+		return r + lum, g + lum, b + lum
 	if len(col) == 4:
 		r, g, b, a = col
-		return r + amount, g + amount, b + amount, a
+		return r + lum, g + lum, b + lum, a
 	
 def color_complement(col):
 	if len(col) == 3:

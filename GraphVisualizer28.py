@@ -7,6 +7,7 @@ from kivy.core.window import Window
 from kivy.uix.scatter import Scatter
 from kivy.graphics.transformation import Matrix
 from kivy.uix.floatlayout import FloatLayout
+from kivy.uix.boxlayout import BoxLayout
 from helper import zero_patch, there_is, brighten, color_complement, luminescence
 from loader import load
 from kivy.uix.bubble import Bubble
@@ -14,6 +15,7 @@ from kivy.uix.button import Button
 from kivy.uix.image import Image
 from kivy.uix.popup import Popup
 from kivy.uix.label import Label
+from kivy.uix.colorpicker import ColorPicker
 
 #import treelib
 from treelib import Tree
@@ -82,6 +84,22 @@ class TreeHelper():
 	@staticmethod
 	def distance_to_root(t, nid):
 		return len(list(t.rsearch(nid)))
+
+class ColorMenu(Popup):
+	target = None
+	def __init__(self, **kwargs):
+		super(ColorMenu, self).__init__(**kwargs)
+
+	def update_target(self, instance, value):
+		print value
+		if self.target != None:
+			self.target.set_color(value)
+			
+	def set_target(self,item):
+		self.target = item
+	
+	def bind_functions(self):
+		self.content.bind(color=self.update_target)		
 
 class TagWidget(FloatLayout):
 	def __init__(self, **kwargs):
@@ -218,6 +236,13 @@ class Node(FloatLayout):
 			else:
 				self.ids['handle'].color = self.color
 			print self.i, "unlit"
+			
+	def set_color(self, col):
+		self.color = col
+		if not self.selected:
+			self.ids['handle'].color = self.color
+		else:
+			self.ids['handle'].color = brighten(self.color, highlight_val)
 			
 	def get_ctrl(self):
 		return self.parent.get_ctrl()
@@ -361,6 +386,13 @@ class Edge(FloatLayout):
 				self.ids['handle'].color = self.normal_color
 			
 			print self.i, self.highlit
+			
+	def set_color(self, col):
+		self.normal_color = col
+		if not self.selected:
+			self.ids['handle'].color = self.normal_color
+		else:
+			self.ids['handle'].color = brighten(self.normal_color, highlight_val)
 		
 	def get_ctrl(self):
 		return self.parent.get_ctrl()
@@ -471,7 +503,7 @@ class treeData():
 		
 		#t.edgeAttrs = ["element","time","animal"]
 		
-		if nid != 0: self.treeVis.add_edge((pid, nid),root_pos,pos,input_color=(0.9,0.2,0.2,1)) #only print the edge if it is not a root
+		if nid != 0: self.treeVis.add_edge((pid, nid),root_pos,pos) #only print the edge if it is not a root
 		
 		print self.graph_leftmost, self.graph_rightmost, self.graph_bottommost
 		for cid in t.get_node(nid).fpointer:
@@ -705,6 +737,7 @@ class Control(Widget):
 	graph_type = None
 	
 	graph_tools = None
+	item_tools = None
 	
 	def __init__(self, **kwargs):
 		super(Control,self).__init__(**kwargs)
@@ -756,6 +789,16 @@ class Control(Widget):
 				print "can only get common depth of nodes"
 		if keycode[1] == 'c':
 			self.graph_tools.clear()
+		if keycode[1] == '1':
+			self.item_tools.set_color(self.selection_1)
+			'''
+		if keycode[1] == '1':
+			for item in self.get_visualizer().node_widgets + self.get_visualizer().edge_widgets:
+				if item != None: item.set_color((1,0.2,0.25,1))
+		if keycode[1] == '2':
+			for item in self.get_visualizer().node_widgets + self.get_visualizer().edge_widgets:
+				if item != None: item.set_color((0.2,0.8,0.5,1))
+				'''
 		return True
 		
 	def _on_keyboard_up(self, keyboard, keycode):
@@ -912,6 +955,7 @@ class WindowWidget(FloatLayout):
 	def take_visualizer(self,v):
 		self.visualizer = v
 		self.add_widget(self.visualizer)
+		self.get_ctrl().item_tools = ItemTools(self.visualizer)
 		
 		if self.get_ctrl().graph_type is Tree:
 			self.get_ctrl().graph_tools = TreeTools(self.visualizer, self.get_ctrl().graph_data)
@@ -922,6 +966,44 @@ class WindowWidget(FloatLayout):
 	def get_ctrl(self):
 		return self.control
 			
+class ItemTools():
+	visualizer = None
+	color_picker = ColorMenu(title='<tag>', content=ColorPicker(), size_hint=(None,None), size=(400,400))
+	color_picker.bind_functions()
+	color_picker_shown = False
+	
+	#Make sure this will work for both node and edge
+	def __init__(self, visualizer):
+		self.visualizer = visualizer
+		
+	def set_color(self, id):
+		item = None
+		if type(id) is int:
+			item = self.visualizer.node_widgets[id]
+		elif type(id) is tuple:
+			item = self.visualizer.edge_widgets[id[1]]
+		if item is None:
+			print "ERROR: edge/node "+str(id)+" note found"
+			return
+		self.color_picker.set_target(item)
+		self.color_picker.title="Color: < "+item.tag+" >"
+		self.color_picker.open()
+		print self.color_picker.pos
+		
+	def set_tag(self, nid,idx):
+		pass
+		
+	def show_tag(self, nid,truth_value):
+		pass
+		
+	def show_color_picker(self):
+		self.visualizer.graph.add_widget(self.color_picker)
+		self.color_picker_shown = True
+		
+	def hide_color_picker(self):
+		self.visualizer.graph.remove_widget(self.color_picker)
+		self.color_picker_shown = False
+	
 class TreeTools():
 
 	tree_widget = None
@@ -963,7 +1045,7 @@ class TreeTools():
 class GraphVisApp(App):
     def build(self):
 		
-		t = load("BigTGraph.txt")
+		t = load("TGraphFinal.txt")
 		td = treeData(t)
 		parent = WindowWidget()
 		parent.take_graph_data(td.t)
